@@ -9,7 +9,6 @@ import shutil
 from random import sample, seed
 import glob
 import json
-import numpy as np
 
 def read_coco_file(coco_file):
     with open(coco_file) as f_in:
@@ -154,19 +153,15 @@ def create_coco_images_annotations(coco_data, train_files, val_files, test_files
     # print(f"coco_images_test = {coco_images_test}")
 
     # create coco annotation format
-    width = coco_data["images"][0]["width"]
-    height = coco_data["images"][0]["height"]
-
-    coco_ann_train, coco_ann_val, coco_ann_test = create_coco_annotation(coco_data, train_files, coco_val_ids, coco_test_ids, width, height)
+    coco_ann_train, coco_ann_val, coco_ann_test = create_coco_annotation(coco_data, train_files, coco_val_ids, coco_test_ids)
     # print(f"coco_annotations_val = {coco_ann_val}")
 
     return coco_images_train, coco_ann_train, coco_images_val, coco_ann_val, coco_images_test, coco_ann_test
 
-def create_coco_annotation(coco_data, train_files, coco_val_ids, coco_test_ids, width, height):
+def create_coco_annotation(coco_data, train_files, coco_val_ids, coco_test_ids):
     coco_annotations_train = []
     coco_annotations_val = []
     coco_annotations_test = []
-    out_bbox = [0.0, 0.0, 0.0, 0.0]
     exclude_ids = coco_val_ids + coco_test_ids
     print(f"exclude_ids = {exclude_ids}")
 
@@ -174,40 +169,27 @@ def create_coco_annotation(coco_data, train_files, coco_val_ids, coco_test_ids, 
         current_id = coco_data["annotations"][i]["image_id"]
 
         _id = coco_data["annotations"][i]["id"]
-        _segmentation = coco_data["annotations"][i]["segmentation"]
-        out_poly = []
-        poly = np.reshape(_segmentation, (-1, 2))
-        for pt in poly:
-            x = pt[0] * width
-            y = pt[1] * height
-            out_poly.append([x,y])
-        # flatten a list
-        poly_list = sum(out_poly, [])
-
+        _segmentation = coco_data["annotations"][i]["segmentation"]               
+#        _segmentation = [0.0,0.0,0.0]                  
         _image_id = coco_data["annotations"][i]["image_id"]
         _category_id= coco_data["annotations"][i]["category_id"]
         _area = coco_data["annotations"][i]["area"]
         _bbox = coco_data["annotations"][i]["bbox"]
-        out_bbox[0] = width * _bbox[0]
-        out_bbox[1] = height * _bbox[1]
-        out_bbox[2] = width * _bbox[2]
-        out_bbox[3] = height * _bbox[3]
-
         _iscrowd = 0
 
         if current_id not in exclude_ids:           
             coco_annotations_train.append(
-                dict(id=_id, segmentation=poly_list, image_id=_image_id, category_id=_category_id, area=_area, bbox=out_bbox, iscrowd=_iscrowd,)
+                dict(id=_id, segmentation=_segmentation, image_id=_image_id, category_id=_category_id, area=_area, bbox=_bbox, iscrowd=_iscrowd,)
             )
         # for val
         elif current_id in coco_val_ids:
             coco_annotations_val.append(
-                dict(id=_id, segmentation=poly_list, image_id=_image_id, category_id=_category_id, area=_area, bbox=out_bbox, iscrowd=_iscrowd,)
+                dict(id=_id, segmentation=_segmentation, image_id=_image_id, category_id=_category_id, area=_area, bbox=_bbox, iscrowd=_iscrowd,)
             )
         # for test
         elif current_id in coco_test_ids:
             coco_annotations_test.append(
-                dict(id=_id, segmentation=poly_list, image_id=_image_id, category_id=_category_id, area=_area, bbox=out_bbox, iscrowd=_iscrowd,)
+                dict(id=_id, segmentation=_segmentation, image_id=_image_id, category_id=_category_id, area=_area, bbox=_bbox, iscrowd=_iscrowd,)
             )
 
     return coco_annotations_train, coco_annotations_val, coco_annotations_test
