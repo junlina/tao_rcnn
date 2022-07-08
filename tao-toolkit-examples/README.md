@@ -1,68 +1,51 @@
 
-# Mask RCNN
+# End-to-end Manufacturing Use Case with DeepStream and TAO Toolkit
 
-## Scheme-1: Using Azure ML label tool for model training
-## ------------------------------------------------------
+This example will illustrate how to build your own custom model using Nvidia's TAO toolkit and to integrate the model with DeepStream. The exapmle uses a MaskRCNN model provided in the TAO toolkit for performing transfer learning.
 
-## step 1: Label item images
-Using Azure ML label tool to label the images for model training. please read the document of "Azure ML labeling and data training for mask RCNN.pdf" for details.
-After done with labeling, export the container blobs json file. proceed to step 2.
+![Use Case Example](docs/images/defect-detection.gif)
 
-## step 2: Download blob images using Azure storage SDK
-Run python3 'download-aml_blobs.py' aml_coco_config.ini 
-- input configuration ini file. it's located at the same folder as the one of this python file.
-Here is an example: the configuration data includes three parameters: (a). connection_string (b). Blob_Container_id (c).aml_exported_coco_json.
+This example has been adapted from the Mask RCNN documentation provided by Nvidia. Please refer to the below documentation if attempting to train a custom model using your own data. 
 
-[section]
-connection_string = DefaultEndpointsProtocol=https;AccountName=amlwalmsdwus2d8436142290;AccountKey=IrD/MOSsO342xQ0COSLc/7tZAgTHsMSx2TzC9XwKugvSisCZqiQwNB45Ok1Kp50WgcnzXi6jvATomwmEfcPm4Q==;EndpointSuffix=core.windows.net
-Blob_Container_id = azureml-blobstore-f62d7dac-3360-48d1-9530-e20a65fb87a7
-[Path]
-aml_exported_coco_json: ~/repos/manufacturing-demo/workspace/data/inputs/d02242f7-038a-4090-b39c-922e1542d0aa.json
+[TAO Toolkit MaskRCNN Documentation](https://docs.nvidia.com/tao/tao-toolkit/text/instance_segmentation/mask_rcnn.html)
 
-- Output the blob images are stored at the same folder as input json file.
 
-## Step 3: Split all the images into train, val and test subsets
-sudo python3 split_aml_exported_coco.py json_file image_folder output --train_pct
-- input
-json_file  an Azure ML coco json file. e.g. ~/repos/manufacturing-demo/workspace/data/inputs/d02242f7-038a-4090-b39c-922e1542d0aa.json 
-image_folder e.g. ~/repos/manufacturing-demo/workspace/data/inputs 
+# Solution Flow
+1. Capture images of desired defects to track (we have already done this for you. The labeled images will be downloaded in the Jupyter notebook)
+2. Upload and label images using Azure Machine Learning labeling service. For more information on this process, please reference the below documentation. For simplicity, we have labeled the dataset for this example in advance (you can find details on the process we followed [here](docs/azureml-labeling.md)). 
+    - [Creating Image Labeling Projects](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-create-image-labeling-projects)
+    - [Labeling Images For Your Project](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-label-data)
+    - [Exporting Labeled Datasets](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-create-image-labeling-projects#export-the-labels)
+3. Export labels from the Azure ML labeling service
+4. Run the `Manufacturing Use Case Hands On Lab.ipynb` Jupyter notebook experience. 
 
-- train_pct percentage of data for training set. Default is 0.8
 
-- output store the train, test and validation set. they are stored in ~/repos/manufacturing-demo/workspace/models/mask_rcnn/workspace/data/outputs
+# Prerequisites
 
-## convert train/test/val/ subset coco files into TFRecord data format
-sudo ./process-labels-aml.sh
-the script is located int workspace/models/mask_rcnn    
-- output: ./workspace/models/mask_rcnn/workspace/data/outputs/TFRecords
+In order to run this example you will need to have the dependencies installed for both the TAO Toolkit as well as the DeepStream SDK. Links to the getting started guides with details on these prerequisites are provided below.
+- [NVIDIA TAO toolkit](https://docs.nvidia.com/tao/tao-toolkit/text/tao_toolkit_quick_start_guide.html)
+- [NVIDIA DeepStream SDK Developer Guide](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Quickstart.html#dgpu-setup-for-ubuntu)
 
-## train model
-make train-mrcnn-adhoc to train model
-- output: ./workspace/models/mask_rcnn/experiment_unpruned
+> **NOTE:** Nvidia maintains the latest hardware and software requirements here for getting started. Please follow the guide until the beginning of the `Download Jupyter Notebooks and Resources` section as we will use the notebook contained in this repository. 
 
-## scheme-2 Using Labelme tool for model training
-## ------------------------------------------------------
+> **NOTE:** Be sure to create the `launcher` conda environment specified in the document
 
-## Step 1: Label images
-We used labelme to label the images for model training
-After done with labeling, please proceed to step 2 to prepare datasets for integration with the TAO toolkit
 
-## Step 2: Split into train, val
-Run the `prepare-dataset.py` script to split all images into train, test, validation
+# Setting up Jupyter Notebook Server
 
-Inputs to script
-- input directory with all image files and json file annotations
-- output directory to store your train, test, and validation sets
-- percentage of data to use for training set. Default is .9
+Activate your conda environment and install the jupyter dependencies for running the lab. This can be achieved with the commands listed below.
 
-## Step 3: Convert labels into TFRecords expected by TAO Toolkit
-- Update the value in process-labels.sh script located in workspace/models/mask_rcnn folder to point to where your annotated images are stored.
+```bash
+conda activate launcher
+pip3 install jupyter
+```
 
-## Run the `process-labels.sh` script found in the workspace/models/mask_rcnn folder
-This script goes through two steps:
-1) Converts from labelme annotation format to COCO format
-2) Converts from COCO format to TFRecords
+# Start the Hands on Lab
 
-## Step 4: Run make commands based on needs
-make train-mrcnn-adhoc to train model
- 
+With your conda environment activated, run the below command to start your notebook server. Open the server in your browser and navigate to the `Manufacturing Use Case Hands On Lab.ipynb` notebook.
+
+> Note: If you are connecting to the machine used for training via SSH, you will need to configur a local port forward for your SSH session. This will allow you to navigate to `localhost:8888` to access your jupyter notebook server.
+
+```bash
+jupyter notebook --ip 0.0.0.0 --allow-root --port 8888
+```
